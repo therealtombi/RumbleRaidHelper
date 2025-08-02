@@ -298,5 +298,25 @@ function showRaidTargets() {
         popup.appendChild(btn);
     });
 
+    const closeBtn = document.createElement('button');
+    closeBtn.style.margin = '5px 0';
+    closeBtn.style.padding = '5px';
+    closeBtn.style.background = '#F23160';
+    closeBtn.style.color = 'white';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.style.borderRadius = '10px';
+    closeBtn.style.height = '2.2em';
+    closeBtn.style.width = '100%';
+    closeBtn.style.alignItems = 'center';
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = 'Close';
+    closeBtn.appendChild(labelSpan);
+
+    closeBtn.addEventListener('click', () => {
+        document.getElementById('raid-popup').remove();
+    });
+
+    popup.appendChild(closeBtn);
+    
     document.body.appendChild(popup);
 }
