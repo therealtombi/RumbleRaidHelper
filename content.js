@@ -7,6 +7,8 @@
  * License: MIT
  */
 
+let ownershipCheckCompleted = false;
+
 console.log("✅ RumbleRaidHelper Content Script Loaded");
 
 function getStreamIdFromAlternateLink() {
@@ -413,6 +415,11 @@ function showRaidConfirmationPopup(htmlContent) {
 }
 
 async function insertRaidButton() {
+
+    if (ownershipCheckCompleted) {
+        return;
+    }
+
     injectRaidStyles();
     const bodyTag = document.querySelector('body');
     const isStudioPage = bodyTag && bodyTag.classList.contains('studio-body-tag');
@@ -448,6 +455,8 @@ async function insertRaidButton() {
         }
         isOwner = await verifyLiveStreamOwnership(apiKey);
     }
+
+	ownershipCheckCompleted = true;
     
     if (!isOwner) {
         console.log("🚫 Not verified as stream owner. RAID button will not be inserted.");

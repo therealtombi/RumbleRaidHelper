@@ -5,14 +5,14 @@ A Chrome Extension to assist with Rumble streaming raids.
 ## Features
 - ALT + Right Click to raid
 - Raid menu for selecting live streams
-- Compatible with CChrome, Edge, Opera, Opera GX and Brave. Firefox (port coming soon)
+- Compatible with Chrome, Brave, Edge, Firefox (port available)
 
-## Installation for Chrome, Edge, Opera, Opera GX and Brave
+## Installation for Chrome, Edge and Brave
 
 ### Load Unpacked:
 1. Download ZIP and Extract to Desktop
-2. Open Chrome, Edge, Opera, Opera GX and Brave
-3. Go to the settings in the browser and locate "extensions"
+2. Open Chrome, Edge, Brave, Opera, Opera GX
+3. Go to `chrome://extensions/` in address bar
 4. Enable **Developer Mode**
 5. Click **Load Unpacked**
 6. Select the `RumbleRaidHelper/` folder
