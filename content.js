@@ -1,302 +1,513 @@
+/*!
+ * Rumble Raid Helper - content.js
+ * Version: v3
+ * Description: Handles DOM manipulation, popup UI injection, and communication with background script for managing the raid confirmation process.
+ * Author: TheRealTombi
+ * Website: https://rumble.com/TheRealTombi
+ * License: MIT
+ */
+
 console.log("✅ RumbleRaidHelper Content Script Loaded");
 
 function getStreamIdFromAlternateLink() {
-    const altLink = document.querySelector('link[rel="alternate"][type="application/json+oembed"]');
-    if (!altLink) {
-        console.warn("❌ No alternate link found in page.");
-        return null;
-    }
-
-    const url = new URL(altLink.href);
-    const embedPath = url.searchParams.get("url"); // e.g., https://rumble.com/embed/v6upwpq/
-    const match = embedPath.match(/\/v?([a-z0-9]{6,})\//i); // capture optional 'v' prefix
-    const id = match ? match[1] : null;
-
-    console.log("🔍 Extracted Stream ID from alternate link:", id);
-    return id;
+    const altLink = document.querySelector('link[rel="alternate"][type="application/json+oembed"]');
+    if (!altLink) {
+        console.warn("❌ No alternate link found in page.");
+        return null;
+    }
+    const url = new URL(altLink.href);
+    const embedPath = url.searchParams.get("url");
+    const match = embedPath.match(/\/v?([a-z0-9]{6,})\//i);
+    const id = match ? match[1] : null;
+    console.log("🔍 Extracted Stream ID from alternate link:", id);
+    return id;
 }
 
-async function verifyOwnership(apiKey) {
-    const streamId = getStreamIdFromAlternateLink();
-    if (!streamId) {
-        console.warn("🚫 Could not extract stream ID from page.");
-        return false;
-    }
-
-    try {
-        const res = await fetch(`https://rumble.com/-livestream-api/get-data?key=${apiKey}`);
-        const data = await res.json();
-
-        const ownedStreams = data.livestreams?.map(s => s.id) || [];
-        console.log("📺 Livestreams from API:", ownedStreams);
-
-        const isOwner = ownedStreams.includes(streamId);
-        console.log(isOwner ? "✅ Verified as stream owner!" : "🚫 Not the owner.");
-        return isOwner;
-    } catch (err) {
-        console.error("❌ API call failed:", err);
-        return false;
-    }
+async function verifyLiveStreamOwnership(apiKey) {
+    const streamId = getStreamIdFromAlternateLink();
+    if (!streamId) {
+        console.warn("🚫 Could not extract stream ID from page.");
+        return false;
+    }
+    try {
+        const res = await fetch(apiKey);
+        const data = await res.json();
+        const ownedStreams = data.livestreams?.map(s => s.id) || [];
+        console.log("📺 Livestreams from API:", ownedStreams);
+        const isOwner = ownedStreams.includes(streamId);
+        console.log(isOwner ? "✅ Verified as stream owner!" : "🚫 Not the owner.");
+        return isOwner;
+    } catch (err) {
+        console.error("❌ API call failed:", err);
+        return false;
+    }
 }
 
-function insertRaidButton() {
-    const chatForm = document.querySelector(".chat-message-form-section");
-    const headerActions = document.querySelector(".header-user-actions.space-x-4");
-    if (!chatForm) {
-        console.warn("⚠️ Chat form not found — not a live stream page?");
-        return;
-    }
-
-    chrome.storage.local.get("rumbleApiKey", async (data) => {
-        const apiKey = data.rumbleApiKey;
-        const isOwner = await verifyOwnership(apiKey);
-
-        const existing = document.getElementById("raid-button");
-        if (existing) existing.remove();
-
-        const btn = document.createElement("button");
-        btn.id = "raid-button";
-        btn.textContent = "🚀 RAID";
-        btn.style = "margin: 10px; padding: 5px 10px; font-size: 14px; background: rgb(133, 199, 66); color: black; border: none; cursor: pointer; border-radius: 8px;";
-
-        if (!isOwner) {
-            btn.style.display = "none";
-            console.warn("🚫 Not verified as stream owner — hiding RAID button.");
-        } else {
-            btn.addEventListener("click", () => {
-                showRaidTargets();
-            });
-        }
-
-        if (headerActions) headerActions.appendChild(btn);
-        else chatForm.appendChild(btn);
-        console.log("✅ RAID button inserted.");
-    });
+async function verifyStudioOwnership() {
+    try {
+        const nextDataScript = document.getElementById("__NEXT_DATA__");
+        if (!nextDataScript) {
+            console.warn("⚠️ '__NEXT_DATA__' script tag not found on Studio page.");
+            return false;
+        }
+        const pageData = JSON.parse(nextDataScript.textContent);
+        const studioUsername = pageData?.props?.pageProps?.session?.user?.username;
+        if (!studioUsername) {
+            console.warn("⚠️ Could not find username in '__NEXT_DATA__'.");
+            return false;
+        }
+        const storedData = await chrome.storage.local.get("rumbleUsername");
+        const storedUsername = storedData.rumbleUsername;
+        if (studioUsername === storedUsername) {
+            console.log("✅ Authenticated as stream owner via Studio data.");
+            return true;
+        } else {
+            console.warn("🚫 Studio username does not match stored username.");
+            return false;
+        }
+    } catch (e) {
+        console.error("🚫 Error parsing '__NEXT_DATA__':", e);
+        return false;
+    }
 }
 
-// Right-click raid via ALT + contextmenu
-document.addEventListener('contextmenu', function (event) {
-    if (!event.altKey || event.button !== 2) return;
+function injectRaidStyles() {
+    const styleId = 'rumble-raid-helper-styles';
+    if (document.getElementById(styleId)) return;
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+							#raid-button {
+								margin-left: 10px;
+								padding: 5px 10px;
+								font-size: 14px;
+								background: rgb(16, 20, 23);
+								color: white;
+								border: none;
+								cursor: pointer;
+								border-radius: 9999px;
+							}
 
-    let target = event.target;
-    let streamURL = null;
-    let depth = 0;
+							.raid-popup {
+								position: fixed;
+								top: 50%;
+								left: 50%;
+								transform: translate(-50%, -50%);
+								width: 350px;
+								max-height: 80vh;
+								background: #222;
+								color: white;
+								border-radius: 10px;
+								box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+								z-index: 99999;
+								padding: 10px;
+								display: flex;
+								flex-direction: column;
+								overflow: hidden;
+								animation: fadeIn 0.3s ease-in-out;
+								border: 2px solid red;
+							}
 
-    while (target && depth < 10) {
-        if (target.tagName === 'A' && target.href && target.href.includes('rumble.com/') && target.href.includes('/v')) {
-            streamURL = target.href;
-            break;
-        }
-        if (target.dataset && target.dataset.href && target.dataset.href.includes('rumble.com/')) {
-            streamURL = target.dataset.href;
-            break;
-        }
-        target = target.parentElement;
-        depth++;
-    }
+							.raid-popup-header {
+								display: flex;
+								justify-content: space-between;
+								align-items: center;
+								border-bottom: 1px solid #333;
+								padding-bottom: 10px;
+								margin-bottom: 10px;
+							}
 
-    if (streamURL) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
+							.raid-popup-header h3 {
+								margin: 0;
+								font-size: 1.2em;
+							}
 
-        const chatInput = document.getElementById('chat-message-text-input');
-        if (chatInput) {
-            chatInput.focus(); // Ensure focus is set
+							#raid-popup-close {
+								background: none;
+								border: none;
+								color: #ddd;
+								font-size: 1.5em;
+								cursor: pointer;
+							}
 
-            // Set value and dispatch both 'input' and 'change' for robustness
-            chatInput.value = `/raid ${streamURL}`;
-            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
-            chatInput.dispatchEvent(new Event('change', { bubbles: true })); // Added change event
+							.raid-list {
+								overflow-y: auto;
+								flex-grow: 1;
+								padding-right: 5px;
+							}
 
-            // Add a small delay to ensure focus and value updates are processed
-            setTimeout(() => {
-                // Dispatch keydown, keypress, and keyup for 'Enter'
-                const enterKeyDown = new KeyboardEvent('keydown', {
-                    key: 'Enter',
-                    code: 'Enter',
-                    keyCode: 13,
-                    which: 13,
-                    bubbles: true,
-                    cancelable: true
-                });
-                const enterKeyPress = new KeyboardEvent('keypress', { // Added keypress event
-                    key: 'Enter',
-                    code: 'Enter',
-                    keyCode: 13,
-                    which: 13,
-                    bubbles: true,
-                    cancelable: true
-                });
-                const enterKeyUp = new KeyboardEvent('keyup', {
-                    key: 'Enter',
-                    code: 'Enter',
-                    keyCode: 13,
-                    which: 13,
-                    bubbles: true,
-                    cancelable: true
-                });
+							.raid-target-button {
+								display: flex;
+								align-items: center;
+								width: 100%;
+								background: #333;
+								color: white;
+								border: none;
+								padding: 8px;
+								margin-bottom: 5px;
+								border-radius: 5px;
+								cursor: pointer;
+								transition: background-color 0.2s;
+							}
 
-                chatInput.dispatchEvent(enterKeyDown);
-                chatInput.dispatchEvent(enterKeyPress); // Dispatch keypress
-                chatInput.dispatchEvent(enterKeyUp);
+							.raid-target-button:hover {
+								background-color: #444;
+							}
 
-                console.log("Right-click raid: '/raid' command entered and 'Enter' key simulated (keydown, keypress, keyup) after delay.");
-            }, 10); // Increased delay slightly to 100ms for more robustness
-        }
-    }
+							.raid-target-avatar {
+								width: 30px;
+								height: 30px;
+								border-radius: 50%;
+								margin-right: 10px;
+							}
+
+							.studio-button {
+								width: 100%;
+								padding: 10px;
+								margin-top: 10px;
+								background-color: #f7a01a;
+								color: white;
+								font-weight: bold;
+								border-radius: 9999px;
+								border: none;
+								cursor: pointer;
+								transition: background-color 0.2s;
+							}
+
+							.studio-button:hover {
+								background-color: #e08e17;
+							}
+
+							@keyframes fadeIn {
+								from {
+									opacity: 0;
+									transform: translate(-50%, -60%);
+								}
+
+								to {
+									opacity: 1;
+									transform: translate(-50%, -50%);
+								}
+							}
+
+							.chat-pinned-ui__raid-confirm-button-container {
+								display: flex;
+								justify-content: flex-end;
+								gap: 10px;
+								margin-top: 15px;
+							}
+
+							.btn {
+								all: unset;
+								padding: 8px 16px;
+								font-size: 13px;
+								font-weight: bold;
+								border-radius: 6px;
+								cursor: pointer;
+								text-align: center;
+								line-height: 1.5;
+							}
+
+							.btn-xs {
+								font-size: 12px;
+								padding: 6px 12px;
+							}
+
+							.btn-green {
+								background-color: var(--brand-500, #85c742);
+								color: var(--white, #fff);
+							}
+
+							.btn-grey {
+								background-color: #444;
+								color: white;
+							}
+
+							.btn-green:hover {
+								background-color: #a4e662;
+							}
+
+							.btn-grey:hover {
+								background-color: #555;
+							}
+
+							.chat-pinned-ui__raid-confirm-header {
+								font-size: 14px;
+								font-weight: bold;
+								margin-bottom: 10px;
+							}
+
+							.chat-pinned-ui__raid-content-message {
+								font-size: 13px;
+								margin-top: 5px;
+							}
+
+							.chat-pinned-ui__raid-confirm-link {
+								color: var(--brand-500, #85c742);
+								text-decoration: none;
+							}
+
+							.chat-pinned-ui__raid-confirm-link:hover {
+								text-decoration: underline;
+							}
+
+							#raid-confirm-popup-wrapper {
+								position: fixed;
+								top: 0;
+								left: 0;
+								right: 0;
+								bottom: 0;
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								background-color: rgba(0, 0, 0, 0.7);
+								z-index: 999999;
+							}
+
+							#raid-confirm-popup {
+								background: #222;
+								color: white;
+								padding: 20px;
+								border-radius: 10px;
+								box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+								border: 1px solid #444;
+							}
+    `;
+    document.head.appendChild(style);
+    console.log("✅ Custom styles injected.");
+}
+
+function showRaidTargets(liveStreamers) {
+    const existingPopup = document.getElementById('raid-popup');
+    if (existingPopup) existingPopup.remove();
+    const popup = document.createElement('div');
+    popup.id = 'raid-popup';
+    popup.classList.add('raid-popup');
+    const popupHeader = document.createElement('div');
+    popupHeader.classList.add('raid-popup-header');
+    const popupTitle = document.createElement('h3');
+    popupTitle.textContent = 'Select Raid Target';
+    const closeButton = document.createElement('button');
+    closeButton.id = 'raid-popup-close';
+    closeButton.innerHTML = '&times;';
+    closeButton.title = 'Close';
+    closeButton.addEventListener('click', () => popup.remove());
+    popupHeader.appendChild(popupTitle);
+    popupHeader.appendChild(closeButton);
+    popup.appendChild(popupHeader);
+    const raidList = document.createElement('div');
+    raidList.classList.add('raid-list');
+    const currentStreamId = getStreamIdFromAlternateLink();
+    console.log("Current Stream ID for exclusion:", currentStreamId);
+    if (liveStreamers.length === 0) {
+        const noStreams = document.createElement('p');
+        noStreams.textContent = "No other live streamers found on the page.";
+        noStreams.style.cssText = "color: yellow; text-align: center; margin: 20px; font-weight: bold;";
+        raidList.appendChild(noStreams);
+    } else {
+        liveStreamers.forEach(streamer => {
+            if (currentStreamId && streamer.id === currentStreamId) {
+                console.log(`Skipping current stream: ${streamer.id}`);
+                return;
+            }
+            const btn = document.createElement('button');
+            btn.classList.add('raid-target-button');
+            const avatarImg = document.createElement('img');
+            avatarImg.src = streamer.thumbnail_url || 'https://rumble.com/favicon.ico';
+            avatarImg.alt = `${streamer.username} avatar`;
+            avatarImg.classList.add('raid-target-avatar');
+            btn.appendChild(avatarImg);
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = `${streamer.username}`;
+            btn.appendChild(labelSpan);
+            btn.addEventListener('click', () => {
+                const raidTargetUrl = `https://rumble.com${streamer.url}`;
+                
+                chrome.runtime.sendMessage({
+                    type: 'sendRaidCommandToHiddenTab',
+                    raidTargetUrl: raidTargetUrl
+                }, (response) => {
+                    if (response?.status === 'ok') {
+                        console.log("Raid request sent to background script.");
+                    } else {
+                        console.error("❌ Failed to send raid request to background script.");
+                    }
+                });
+                popup.remove();
+            });
+            raidList.appendChild(btn);
+        });
+    }
+    popup.appendChild(raidList);
+
+    chrome.storage.local.get("rumbleUsername", (data) => {
+        const username = data.rumbleUsername;
+        if (username) {
+            const studioButton = document.createElement('button');
+            studioButton.classList.add('studio-button');
+            studioButton.textContent = 'Go to Rumble Studio';
+            studioButton.addEventListener('click', () => {
+                chrome.runtime.sendMessage({
+                    type: 'openRumbleStudio',
+                    username: username
+                }, () => popup.remove());
+            });
+            popup.appendChild(studioButton);
+        } else {
+            console.warn("Rumble username not found in storage. Studio button not added.");
+        }
+        document.body.appendChild(popup);
+    });
+}
+
+function showRaidConfirmationPopup(htmlContent) {
+    const existingPopup = document.getElementById('raid-confirm-popup');
+    if (existingPopup) existingPopup.remove();
+
+    const popupContainer = document.createElement('div');
+    popupContainer.id = 'raid-confirm-popup-wrapper';
+
+
+    const popupContent = document.createElement('div');
+    popupContent.id = 'raid-confirm-popup';
+    popupContent.innerHTML = htmlContent;
+    popupContainer.appendChild(popupContent);
+    document.body.appendChild(popupContainer);
+    console.log("✅ Raid confirmation popup displayed on the original tab.");
+
+    const confirmButton = popupContainer.querySelector('button.btn.btn-xs.btn-green');
+    if (confirmButton) {
+        confirmButton.addEventListener('click', () => {
+            console.log("User clicked 'Confirm'. Sending command to background script to finalize the raid.");
+            popupContainer.remove();
+            
+            chrome.runtime.sendMessage({
+                type: 'confirmRaidInHiddenTab'
+            }, (response) => {
+                if (response?.status === 'ok') {
+                    console.log("✅ Confirmation command sent to background script.");
+                } else {
+                    console.error("❌ Failed to send confirmation command.");
+                }
+            });
+        });
+    }
+
+    const cancelButton = popupContainer.querySelector('button.btn.btn-xs.btn-grey');
+    if (cancelButton) {
+        cancelButton.addEventListener('click', () => {
+            console.log("User clicked 'Cancel'. Closing popup.");
+            popupContainer.remove();
+            
+            chrome.runtime.sendMessage({
+                type: 'raidConfirmedAndComplete'
+            }, (response) => {
+                if (response?.status === 'ok') {
+                    console.log("✅ Cleanup command sent to background script.");
+                } else {
+                    console.error("❌ Failed to send cleanup command.");
+                }
+            });
+        });
+    }
+}
+
+async function insertRaidButton() {
+    injectRaidStyles();
+    const bodyTag = document.querySelector('body');
+    const isStudioPage = bodyTag && bodyTag.classList.contains('studio-body-tag');
+    let isOwner = false;
+    let targetDiv = null;
+    
+    const data = await chrome.storage.local.get(["rumbleApiKey", "rumbleUsername"]);
+    const apiKey = data.rumbleApiKey;
+    const storedUsername = data.rumbleUsername;
+
+    if (isStudioPage) {
+        console.log("Studio page detected.");
+        targetDiv = document.querySelector(".flex.items-center.space-x-2.flex-wrap.justify-end") || document.querySelector(".shrink-0.flex.items-center.space-x-2");
+        if (!targetDiv) {
+            console.warn("⚠️ Studio: Target div for raid button not found. Class may have changed.");
+            return;
+        }
+        if (!storedUsername) {
+            console.warn("🚫 Stored username not found. Cannot verify studio ownership.");
+            return;
+        }
+        isOwner = await verifyStudioOwnership();
+    } else {
+        console.log("Live stream page detected.");
+        targetDiv = document.querySelector(".header-user-actions.space-x-4") || document.querySelector(".chat-message-form-section");
+        if (!targetDiv) {
+            console.warn("⚠️ Live Stream: Target div for raid button not found. Classes may have changed.");
+            return;
+        }
+        if (!apiKey) {
+            console.warn("🚫 API key not set in extension storage. Cannot authenticate live stream ownership.");
+            return;
+        }
+        isOwner = await verifyLiveStreamOwnership(apiKey);
+    }
+    
+    if (!isOwner) {
+        console.log("🚫 Not verified as stream owner. RAID button will not be inserted.");
+        return; 
+    }
+
+    const existing = document.getElementById("raid-button");
+    if (existing) {
+        console.log("RAID button already exists. Skipping insertion.");
+        return;
+    }
+
+    const btn = document.createElement("button");
+    btn.id = "raid-button";
+    btn.classList.add("flex", "items-center", "space-x-2", "px-4", "h-12", "bg-navy", "rounded-full", "min-w-fit", "cursor-pointer");
+    
+    const label = document.createElement('span');
+    label.textContent = "🚀 Rumble Raid";
+    btn.appendChild(label);
+
+    btn.addEventListener("click", () => {
+        console.log("Starting unified raid process via background script.");
+        chrome.runtime.sendMessage({
+            type: 'startUnifiedRaidProcess'
+        }, (response) => {
+            if (response?.status === 'ok') {
+                console.log("Unified raid request sent to background script.");
+            } else {
+                console.error("❌ Failed to send unified raid request to background script:", response?.message);
+            }
+        });
+    });
+    targetDiv.appendChild(btn);
+    console.log("✅ RAID button inserted successfully.");
+}
+
+insertRaidButton();
+
+const observer = new MutationObserver((mutationsList, observer) => {
+    const targetDiv = document.querySelector(".flex.items-center.space-x-2.flex-wrap.justify-end") || 
+                      document.querySelector(".header-user-actions.space-x-4") ||
+                      document.querySelector(".chat-message-form-section") ||
+                      document.querySelector(".shrink-0.flex.items-center.space-x-2");
+    
+    if (targetDiv && !document.getElementById("raid-button")) {
+        insertRaidButton();
+    }
 });
+observer.observe(document.body, { childList: true, subtree: true });
 
-// Run on load
-setTimeout(() => {
-    console.log("🚀 Calling insertRaidButton after patch...");
-    insertRaidButton();
-}, 100);
-
-
-function showRaidTargets() {
-    const existingPopup = document.getElementById('raid-popup');
-    if (existingPopup) existingPopup.remove();
-
-    const liveLinks = document.querySelectorAll('a.main-menu-item-channel.main-menu-item-channel-is-live');
-    const popup = document.createElement('div');
-    popup.id = 'raid-popup';
-    popup.style.position = 'fixed';
-    popup.style.top = '50%';
-    popup.style.left = '50%';
-    popup.style.transform = 'translate(-50%, -50%)';
-    popup.style.background = '#222';
-    popup.style.color = 'white';
-    popup.style.padding = '10px';
-    popup.style.borderRadius = '8px';
-    popup.style.zIndex = '9999';
-    popup.style.boxShadow = '0 2px 8px rgba(0,0,0,0.5)';
-    popup.style.maxHeight = '400px';
-    popup.style.overflowY = 'auto';
-    popup.style.display = 'flex'; // Use flexbox for layout
-    popup.style.flexDirection = 'column'; // Arrange items in a column
-    popup.style.gap = '8px'; // Space between items
-
-    // Get the ID of the current stream
-    const currentStreamId = getStreamIdFromAlternateLink();
-    console.log("Current Stream ID for exclusion:", currentStreamId);
-
-
-    liveLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        const fullURL = `https://rumble.com${href}`;
-
-        // Extract the stream ID from the link's href for comparison
-        const linkUrl = new URL(fullURL);
-        const linkPath = linkUrl.pathname;
-        const linkMatch = linkPath.match(/\/v?([a-z0-9]{6,})/i);
-        const linkStreamId = linkMatch ? linkMatch[1] : null;
-
-        // Skip if this link is for the current stream
-        if (currentStreamId && linkStreamId === currentStreamId) {
-            console.log(`Skipping current stream: ${linkStreamId}`);
-            return; // Skip to the next iteration
-        }
-
-        const label = link.querySelector('.main-menu-item-label.main-menu-item-channel-label')?.textContent.trim();
-
-        // Find the avatar element within the link
-        const avatarElement = link.querySelector('.main-menu-item-channel-label-wrapper .user-image.user-image--img');
-        let avatarURL = '';
-
-        if (avatarElement) {
-            const computedStyle = window.getComputedStyle(avatarElement);
-            const backgroundImage = computedStyle.backgroundImage;
-
-            const urlMatch = backgroundImage.match(/url\(['"]?(.*?)['"]?\)/);
-            if (urlMatch && urlMatch[1]) {
-                avatarURL = urlMatch[1];
-            } else {
-                const imgInside = avatarElement.querySelector('img');
-                if (imgInside) {
-                    avatarURL = imgInside.src;
-                }
-            }
-        }
-
-        const btn = document.createElement('button');
-        btn.style.display = 'flex'; // Use flexbox for button content
-        btn.style.alignItems = 'center'; // Vertically align items
-        btn.style.gap = '8px'; // Space between avatar and text
-        btn.style.margin = '5px 0';
-        btn.style.padding = '5px 10px';
-        btn.style.border = 'none';
-        btn.style.borderRadius = '4px';
-        btn.style.background = '#6e5ce0';
-        btn.style.color = 'white';
-        btn.style.cursor = 'pointer';
-
-        if (avatarURL) {
-            const avatarImg = document.createElement('img');
-            avatarImg.src = avatarURL;
-            avatarImg.style.width = '24px'; // Set avatar size
-            avatarImg.style.height = '24px';
-            avatarImg.style.borderRadius = '50%'; // Make it round
-            avatarImg.style.objectFit = 'cover'; // Ensure image covers the area
-            btn.appendChild(avatarImg);
-        }
-
-        const labelSpan = document.createElement('span');
-        labelSpan.textContent = `RAID: ${label}`;
-        btn.appendChild(labelSpan);
-
-
-        btn.addEventListener('click', () => {
-            const chatInput = document.getElementById('chat-message-text-input');
-            if (chatInput) {
-                chatInput.focus(); // Ensure focus is set
-
-                // Set value and dispatch both 'input' and 'change' for robustness
-                chatInput.value = `/raid ${fullURL}`;
-                chatInput.dispatchEvent(new Event('input', { bubbles: true }));
-                chatInput.dispatchEvent(new Event('change', { bubbles: true })); // Added change event
-
-                // Add a small delay to ensure focus and value updates are processed
-                setTimeout(() => {
-                    // Dispatch keydown, keypress, and keyup for 'Enter'
-                    const enterKeyDown = new KeyboardEvent('keydown', {
-                        key: 'Enter',
-                        code: 'Enter',
-                        keyCode: 13,
-                        which: 13,
-                        bubbles: true,
-                        cancelable: true
-                    });
-                    const enterKeyPress = new KeyboardEvent('keypress', { // Added keypress event
-                        key: 'Enter',
-                        code: 'Enter',
-                        keyCode: 13,
-                        which: 13,
-                        bubbles: true,
-                        cancelable: true
-                    });
-                    const enterKeyUp = new KeyboardEvent('keyup', {
-                        key: 'Enter',
-                        code: 'Enter',
-                        keyCode: 13,
-                        which: 13,
-                        bubbles: true,
-                        cancelable: true
-                    });
-
-                    chatInput.dispatchEvent(enterKeyDown);
-                    chatInput.dispatchEvent(enterKeyPress); // Dispatch keypress
-                    chatInput.dispatchEvent(enterKeyUp);
-
-                    console.log("RAID target selected: '/raid' command entered and 'Enter' key simulated (keydown, keypress, keyup) after delay.");
-                }, 100); // Increased delay slightly to 100ms
-            }
-            // Close the popup after clicking a raid target
-            const existing = document.getElementById("raid-popup");
-            if (existing) existing.remove();
-        });
-
-        popup.appendChild(btn);
-    });
-
-    document.body.appendChild(popup);
-}
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'showRaidConfirmation') {
+        showRaidConfirmationPopup(message.html);
+        sendResponse({ status: 'ok' });
+        return true;
+    }
+    if (message.type === 'showRaidTargetsPopup') {
+        console.log("Received live streamers from background script. Displaying popup.");
+        showRaidTargets(message.liveStreamers);
+        sendResponse({ status: 'ok' });
+        return true;
+    }
+});

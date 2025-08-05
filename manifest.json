@@ -1,35 +1,53 @@
 {
-    "manifest_version": 3,
-    "name": "Rumble Raid Helper",
-    "version": "1.1",
-    "description": "ALT + Right Click to raid, or use the Raid menu to pick a live stream.",
-    "permissions": ["storage", "scripting", "activeTab"],
-    "host_permissions": [                  
-        "*://rumble.com/*"
-    ],
-    "content_scripts": [
-        {
-            "matches": ["*://*.rumble.com/*"],
-            "js": ["content.js"]
-        }
-    ],
-    "options_page": "options.html",
-    "icons": {
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
-    },
-    "action": {
-        "default_icon": {
-            "48": "icons/icon48.png"
-        },
-        "default_title": "Rumble Raid Helper"
-    },
-    "author": "TheRealTombi",
-    "homepage_url": "https://rumble.com/user/TheRealTombi",
-    "web_accessible_resources": [          
-        {
-            "resources": ["icons/bg.png"],
-            "matches": ["<all_urls>"]
-        }
-    ]
+	"manifest_version": 3,
+	"name": "Rumble Raid Helper",
+	"version": "3.0",
+	"description": "ALT + Right Click to raid, or use the Raid menu to pick a live stream.",
+	"permissions": [
+		"storage",
+		"scripting",
+		"activeTab",
+		"tabs"
+	],
+	"host_permissions": [
+		"*://*.rumble.com/*"
+	],
+	"background": {
+		"service_worker": "background.js"
+	},
+	"content_scripts": [
+		{
+			"matches": [
+				"https://rumble.com/v*",
+				"https://studio.rumble.com/studio/*",
+				"https://studio.rumble.com/room/*"
+			],
+			"js": [
+				"content.js"
+			]
+		}
+	],
+	"options_page": "options.html",
+	"icons": {
+		"48": "icons/icon48.png",
+		"128": "icons/icon128.png"
+	},
+	"action": {
+		"default_icon": {
+			"48": "icons/icon48.png"
+		},
+		"default_title": "Rumble Raid Helper"
+	},
+	"web_accessible_resources": [
+		{
+			"resources": [
+				"content.css"
+			],
+			"matches": [
+				"https://rumble.com/*"
+			]
+		}
+	],
+	"author": "TheRealTombi",
+	"homepage_url": "https://rumble.com/user/TheRealTombi"
 }

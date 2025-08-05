@@ -1,24 +1,252 @@
+<!--
+  Rumble Raid Helper - options.html
+  Version: v3
+  Description: HTML structure for the extension's settings page.
+  Author: TheRealTombi
+  Website: https://rumble.com/TheRealTombi
+  License: MIT
+-->
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Rumble API Key Settings</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="container">
-    <h2>Enter Your Rumble API Key</h2>
-    <input type="text" id="apiKey" placeholder="Paste your API key here..." />
-    <button id="save">Save</button>
-    <p id="status"></p>
+  <head>
+    <title>Rumble Raid Helper Options</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        background-color: #1b2127;
+        /* A dark, cohesive background */
+        color: #f0f0f0;
+        padding: 20px;
+        margin: 0;
+        line-height: 1.6;
+      }
 
-    <h3>Verification Info</h3>
-    <label>User ID</label>
-    <div id="user_id" class="readonly">-</div>
-    <label>Username</label>
-    <div id="username" class="readonly">-</div>
-    <label>Follower Count</label>
-    <div id="followers" class="readonly">-</div>
-  </div>
-  <script src="options.js"></script>
-</body>
+      .container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 30px;
+        background-color: #283139;
+        /* A slightly lighter background for the content */
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        border: 1px solid #495a6a;
+      }
+
+      h1 {
+        font-size: 2.2em;
+        color: #eab308;
+        /* A vibrant gold for headings */
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      h2 {
+        font-size: 1.5em;
+        color: #d1b100;
+        border-bottom: 2px solid #495a6a;
+        padding-bottom: 10px;
+        margin-top: 30px;
+        margin-bottom: 20px;
+      }
+
+      h3 {
+        font-size: 1.2em;
+        color: #fff;
+        margin-top: 20px;
+        margin-bottom: 15px;
+      }
+
+      .form-section {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+
+      .form-section label {
+        font-weight: bold;
+        color: #e4e8ec;
+      }
+
+      #apiKey {
+        background-color: #384552;
+        border: 1px solid #495a6a;
+        color: #fff;
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 1em;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      button#save {
+        background-color: #4ade80;
+        color: #1b2127;
+        font-weight: bold;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      button#save:hover {
+        background-color: #22c55e;
+      }
+
+      .readonly {
+        background-color: #384552;
+        border: 1px solid #495a6a;
+        padding: 10px;
+        border-radius: 6px;
+        color: #f0f0f0;
+        margin-top: 5px;
+        font-family: monospace;
+      }
+
+      .info-section {
+        margin-bottom: 30px;
+      }
+
+      .lists-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .lists-container>div {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .bio-section {
+        border: 1px solid #495a6a;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .bio-section p {
+        margin-bottom: 15px;
+      }
+
+      .bio-section strong,
+      .bio-section b {
+        color: #e4e8ec;
+      }
+
+      .button-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .link-button,
+      .linktree-button {
+        display: block;
+        padding: 12px 15px;
+        text-align: center;
+        border-radius: 6px;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.1s ease;
+      }
+
+      .link-button {
+        background-color: #4ade80;
+        color: #1b2127;
+      }
+
+      .link-button:hover {
+        background-color: #22c55e;
+        transform: translateY(-1px);
+      }
+
+      .linktree-button {
+        background-color: #007bff;
+        color: white;
+      }
+
+      .linktree-button:hover {
+        background-color: #0056b3;
+        transform: translateY(-1px);
+      }
+
+      #status {
+        color: #fca5a5;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Rumble Raid Helper</h1>
+      <div class="form-section">
+        <form id="settings-form">
+          <h2>API Key Settings</h2>
+          <label for="apiKey">Your Rumble API Key:</label>
+          <input type="password" id="apiKey" placeholder="Paste your API key here..." />
+          <button id="save">Save</button>
+          <p id="status"></p>
+        </form>
+      </div>
+      <div id="main-info" class="info-section" style="display: none;">
+        <h3>Verification Info</h3>
+        <div>
+          <label>User ID</label>
+          <div id="user_id" class="readonly">-</div>
+        </div>
+        <div>
+          <label>Username</label>
+          <div id="username" class="readonly">-</div>
+        </div>
+        <div>
+          <label>Follower Count</label>
+          <div id="followers_count" class="readonly">-</div>
+        </div>
+        <div id="livestream-info">
+          <h3>Live Stream Details</h3>
+          <div id="livestream-details" class="readonly">-</div>
+        </div>
+        <div id="lists-container" class="lists-container">
+          <div id="followers-list">
+            <h3>Recent Followers</h3>
+          </div>
+          <div id="subscribers-list">
+            <h3>Recent Subscribers</h3>
+          </div>
+          <div id="gifted-subs-list">
+            <h3>Recent Gifted Subs</h3>
+          </div>
+        </div>
+      </div>
+      <div class="bio-section">
+        <h2>🎮 Welcome to the Rumble Raid Helper courtesy of Tombi 🎮</h2>
+        <p> 🪖 <b>I'm an Armed Forces Veteran (Mine Disposal)</b>, proudly served and medically discharged in 2007 due to injury in Gulf War 2 with a condition called <b>CRPS - aka The Suicide Disease.</b>
+        </p>
+        <p> These days, I'm a passionate gamer and tech enthusiast who loves sharing knowledge, stories, and a good laugh (with a healthy splash of expletives! 🚀💬). </p>
+        <p> ⚡ <b>Warning: I curse. A lot.</b> 😅 Expect colorful language as we dive into awesome discussions, friendly debates, and the occasional rant. My opinions are my own — and trust me, they’re not changing anytime soon! 💬🔥 </p>
+        <p> 👉 Please consider following me over on Rumble or, Subscribing over on Youtube as a small thank you for this app, it helps me to know something I have created is out there doing good! </p>
+      </div>
+      <div class="bio-section">
+        <h2>Charity Drives and Socials</h2>
+        <p>I regularly carry out Charity drives and often have a few going on. Here are links to my existing ones:</p>
+        <div class="button-section">
+          <a href="https://www.givesendgo.com/ScoobyShack" target="_blank" class="link-button">ScoobyShack</a>
+          <a href="https://www.givesendgo.com/ThetaHealthKick" target="_blank" class="link-button">ThetaHealthKick</a>
+          <a href="https://www.givesendgo.com/Clifton3DLasers" target="_blank" class="link-button">Clifton3DLasers</a>
+          <a href="https://www.givesendgo.com/ComixClanVan" target="_blank" class="link-button">ComixClanVan</a>
+        </div>
+        <p style="margin-top: 20px;">For all my socials, you can find them here:</p>
+        <div class="button-section">
+          <a href="https://linktr.ee/therealtombi" target="_blank" class="linktree-button">Linktree</a>
+        </div>
+      </div>
+    </div>
+    <script src="options.js"></script>
+  </body>
 </html>
