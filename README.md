@@ -1,6 +1,8 @@
 # Rumble Raid Helper 🚀
 
-A Chrome Extension to assist with Rumble streaming raids.
+A Chrome Extension to assist with Rumble streaming raids.  
+
+Adds a button to any of your Live Streams, Rumble Studio Canvas page or, the Rumble Studio Direct RTMP Page!
 
 ## Features
 - ALT + Right Click to raid
