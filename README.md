@@ -2,7 +2,7 @@
 
 A Chrome Extension to assist with Rumble streaming raids.  
 
-Adds a button to any of your Live Streams, Rumble Studio Canvas page or, the Rumble Studio Direct RTMP Page!
+Adds a "RAID Button" to any of your Live Streams, Rumble Studio Canvas page or, the Rumble Studio Direct RTMP Page!
 
 ## Features
 - ALT + Right Click to raid
