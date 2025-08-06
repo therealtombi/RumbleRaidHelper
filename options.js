@@ -1,6 +1,6 @@
 /*!
  * Rumble Raid Helper - options.js
- * Version: v3
+ * Version: v3.2
  * Description: Handles user interaction with the extension options page, including setting and saving the Rumble API key.
  * Author: TheRealTombi
  * Website: https://rumble.com/TheRealTombi
@@ -125,6 +125,54 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('status').textContent = '✅ API Key saved! Fetching data...';
             verifyApiKey(key);
             setTimeout(() => document.getElementById('status').textContent = '', 3000);
+        });
+    });
+
+	const soundUploadInput = document.getElementById('sound-upload');
+    const saveSoundButton = document.getElementById('save-sound');
+    const resetSoundButton = document.getElementById('reset-sound');
+    const soundStatus = document.getElementById('sound-status');
+
+    // Logic to save the custom sound
+    saveSoundButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        const file = soundUploadInput.files[0];
+
+        if (!file) {
+            soundStatus.textContent = 'Please select a file first.';
+            return;
+        }
+
+        // Check file size (e.g., limit to 2MB). Base64 encoding adds ~33% overhead.
+        if (file.size > 2 * 1024 * 1024) {
+            soundStatus.textContent = 'Error: File is too large (max 2MB).';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const base64Sound = e.target.result;
+            chrome.storage.local.set({ customAlertSound: base64Sound }, () => {
+                soundStatus.textContent = '✅ Custom sound saved successfully!';
+                soundUploadInput.value = ''; // Clear the input
+                setTimeout(() => { soundStatus.textContent = ''; }, 4000);
+            });
+        };
+        
+        reader.onerror = () => {
+             soundStatus.textContent = 'Error: Failed to read the file.';
+        };
+        
+        reader.readAsDataURL(file);
+    });
+
+    // Logic to reset to the default sound
+    resetSoundButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        // Simply remove the custom sound from storage
+        chrome.storage.local.remove('customAlertSound', () => {
+            soundStatus.textContent = '✅ Sound has been reset to default.';
+            setTimeout(() => { soundStatus.textContent = ''; }, 4000);
         });
     });
 });

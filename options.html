@@ -1,6 +1,6 @@
 <!--
   Rumble Raid Helper - options.html
-  Version: v3
+  Version: v3.2
   Description: HTML structure for the extension's settings page.
   Author: TheRealTombi
   Website: https://rumble.com/TheRealTombi
@@ -195,6 +195,18 @@
         </form>
       </div>
       <div id="main-info" class="info-section" style="display: none;">
+		<div class="form-section">
+		  <h2>Custom Sound Alert</h2>
+		  <label for="sound-upload">Upload a custom sound for incoming raid alerts (MP3, WAV, etc.).</label>
+		  <input type="file" id="sound-upload" accept="audio/*">
+		  
+		  <div style="display: flex; gap: 10px; margin-top: 10px;">
+			<button id="save-sound">Save Sound</button>
+			<button id="reset-sound">Reset to Default</button>
+		  </div>
+		  
+		  <p id="sound-status"></p>
+		</div>
         <h3>Verification Info</h3>
         <div>
           <label>User ID</label>

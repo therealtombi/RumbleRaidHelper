@@ -1,12 +1,11 @@
 {
 	"manifest_version": 3,
 	"name": "Rumble Raid Helper",
-	"version": "3.0",
+	"version": "3.2",
 	"description": "ALT + Right Click to raid, or use the Raid menu to pick a live stream.",
 	"permissions": [
 		"storage",
 		"scripting",
-		"activeTab",
 		"tabs"
 	],
 	"host_permissions": [
@@ -41,7 +40,8 @@
 	"web_accessible_resources": [
 		{
 			"resources": [
-				"content.css"
+				"content.css",
+				"sounds/raid_alert.mp3"
 			],
 			"matches": [
 				"https://rumble.com/*"

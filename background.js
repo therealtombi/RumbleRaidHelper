@@ -1,6 +1,6 @@
 /*!
  * Rumble Raid Helper - background.js
- * Version: v3
+ * Version: v3.2
  * Description: Manages the lifecycle of hidden tabs, message handling, and script injection for scraping and sending raid commands.
  * Author: TheRealTombi
  * Website: https://rumble.com/TheRealTombi
@@ -496,4 +496,34 @@ chrome.tabs.onRemoved.addListener((tabId) => {
         }
         delete pendingRaidCommands[raidCommandIdToRemove];
     }
+});
+
+function playSoundWithTab(source) {
+  const playerUrl = chrome.runtime.getURL('sound_player.html');
+  const fullUrl = `${playerUrl}?src=${encodeURIComponent(source)}`;
+
+  chrome.tabs.create({
+    url: fullUrl,
+    active: false
+  });
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
+  if (message.type === 'playAlertSound') {
+    playSoundWithTab(message.soundSrc);
+    return true;
+  }
+
+  if (message.type === 'startUnifiedRaidProcess') {
+    return true;
+  }
+
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'playAlertSound') {
+    playSound(message.soundSrc);
+    return true;
+  }
 });

@@ -1,15 +1,27 @@
 # Rumble Raid Helper 🚀
 
-A Chrome Extension to assist with Rumble streaming raids.  
+A Chrome Extension to assist with Rumble streaming raids.
 
-Adds a "RAID Button" to any of your Live Streams, Rumble Studio Canvas page or, the Rumble Studio Direct RTMP Page!
+## Change Log
+- v1.0 - Initial Version
+- - Worked in a LIVE Stream Window only
+- v2.0 - Minor Update
+- - Small update to processing and code
+- v3.0 - Major rewrite
+- - Works in LIVE Stream, Rumble Studio DIRECT RTMP only 
+- v3.1 - Minor rewrite
+- - Reduces API Calls to absolute minimum when not LIVE
+- v3.2 - Minor rewrite
+- - Chat changes in Rumble Studio to make it easier to detect raids
+- - Bug fixes
 
 ## Features
 - ALT + Right Click to raid
 - Raid menu for selecting live streams
-- Compatible with Chrome, Brave, Edge, Firefox (port available)
+- Compatible with Chrome, Brave, Edge, Opera, Opera GX, Vivaldi.  
+- Firefox (port coming soon)
 
-## Installation for Chrome, Edge and Brave
+## Installation for Chrome, Brave, Edge, Opera, Opera GX, Vivaldi
 
 ### Load Unpacked:
 1. Download ZIP and Extract to Desktop
