@@ -3,10 +3,6 @@
 A Chrome Extension to assist with Rumble streaming raids.
 
 ## Change Log
-- v1.0 - Initial Version
-- - Worked in a LIVE Stream Window only
-- v2.0 - Minor Update
-- - Small update to processing and code
 - v3.0 - Major rewrite
 - - Works in LIVE Stream, Rumble Studio DIRECT RTMP only 
 - v3.1 - Minor rewrite
@@ -14,10 +10,12 @@ A Chrome Extension to assist with Rumble streaming raids.
 - v3.2 - Minor rewrite
 - - Chat changes in Rumble Studio to make it easier to detect raids
 - - Bug fixes
+- v3.3 - Minor Update
+- - Added a popup confirmation to the button after being pressed
 
 ## Features
-- ALT + Right Click to raid
-- Raid menu for selecting live streams
+- ALT + Right Click to raid directly on a LIVE Stream
+- Raid Button added to menu in Rumble Studio
 - Compatible with Chrome, Brave, Edge, Opera, Opera GX, Vivaldi.  
 - Firefox (port coming soon)
 

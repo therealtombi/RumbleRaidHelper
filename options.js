@@ -1,6 +1,6 @@
 /*!
  * Rumble Raid Helper - options.js
- * Version: v3.2
+ * Version: v3.3
  * Description: Handles user interaction with the extension options page, including setting and saving the Rumble API key.
  * Author: TheRealTombi
  * Website: https://rumble.com/TheRealTombi

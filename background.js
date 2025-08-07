@@ -1,6 +1,6 @@
 /*!
  * Rumble Raid Helper - background.js
- * Version: v3.2
+ * Version: v3.3
  * Description: Manages the lifecycle of hidden tabs, message handling, and script injection for scraping and sending raid commands.
  * Author: TheRealTombi
  * Website: https://rumble.com/TheRealTombi

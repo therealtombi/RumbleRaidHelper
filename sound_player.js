@@ -1,6 +1,6 @@
 /*!
  * Rumble Raid Helper - offscreen.js
- * Version: v3.2
+ * Version: v3.3
  * Description: Audio player for Raid Alerts in Streams.
  * Author: TheRealTombi
  * Website: https://rumble.com/TheRealTombi

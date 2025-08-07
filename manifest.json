@@ -1,8 +1,8 @@
 {
 	"manifest_version": 3,
 	"name": "Rumble Raid Helper",
-	"version": "3.2",
-	"description": "ALT + Right Click to raid, or use the Raid menu to pick a live stream.",
+	"version": "3.3",
+	"description": "ALT + Right Click to raid, or use the Raid Button to pick a live stream form your list of LIVE Followers!",
 	"permissions": [
 		"storage",
 		"scripting",

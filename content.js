@@ -1,6 +1,6 @@
 /*!
  * Rumble Raid Helper - content.js
- * Version: v3.2
+ * Version: v3.3
  * Description: Handles DOM manipulation, popup UI injection, and communication with background script for managing the raid confirmation process.
  * Author: TheRealTombi
  * Website: https://rumble.com/TheRealTombi
@@ -10,6 +10,60 @@
 let verificationInProgress = false;
 
 console.log("✅ RumbleRaidHelper Content Script Loaded");
+
+let activeLoadingPopup = null;
+
+function manageLoadingPopup(messages = []) {
+
+    if (activeLoadingPopup) {
+        activeLoadingPopup.close();
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'rr-loading-overlay';
+    overlay.innerHTML = `
+        <div class="rr-loading-content">
+            <button class="rr-loading-close" title="Hide">&times;</button>
+            <div class="rr-loading-spinner"></div>
+            <p class="rr-loading-message"></p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const messageElement = overlay.querySelector('.rr-loading-message');
+    let messageIndex = 0;
+    let intervalId = null;
+
+    const controller = {
+        close: () => {
+            clearInterval(intervalId);
+            if (overlay) {
+                overlay.remove();
+            }
+            activeLoadingPopup = null;
+        }
+    };
+    
+    overlay.querySelector('.rr-loading-close').addEventListener('click', () => {
+
+        controller.close();
+    });
+
+    const updateMessage = () => {
+        messageElement.textContent = messages[messageIndex];
+        messageIndex = (messageIndex + 1) % messages.length;
+    };
+
+    if (messages.length > 0) {
+        updateMessage();
+        if (messages.length > 1) {
+            intervalId = setInterval(updateMessage, 3000);
+        }
+    }
+
+    activeLoadingPopup = controller;
+    return controller;
+}
 
 function getStreamIdFromAlternateLink() {
     const altLink = document.querySelector('link[rel="alternate"][type="application/json+oembed"]');
@@ -343,6 +397,76 @@ function injectRaidStyles() {
 									opacity: 1;
 								}
 							}
+							
+							.rr-loading-overlay {
+								position: fixed;
+								top: 0;
+								left: 0;
+								width: 100%;
+								height: 100%;
+								background-color: rgba(0, 0, 0, 0.75);
+								z-index: 999998;
+								display: flex;
+								justify-content: center;
+								align-items: center;
+								backdrop-filter: blur(5px);
+							}
+
+							.rr-loading-content {
+								position: relative;
+								color: white;
+								text-align: center;
+								padding: 30px;
+								border-radius: 10px;
+								background: #283139;
+								box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+								width: 350px;
+								min-height: 150px;
+								display: flex;
+								flex-direction: column;
+								justify-content: center;
+							}
+
+							/* New rule for the close button */
+							.rr-loading-close {
+								position: absolute;
+								top: 8px;
+								right: 12px;
+								background: none;
+								border: none;
+								color: #aaa;
+								font-size: 2em;
+								font-weight: bold;
+								cursor: pointer;
+								line-height: 1;
+								transition: color 0.2s;
+							}
+							.rr-loading-close:hover {
+								color: white;
+							}
+
+							.rr-loading-spinner {
+								width: 50px;
+								height: 50px;
+								border: 5px solid rgba(255, 255, 255, 0.3);
+								border-top-color: #85c742; /* Rumble Green */
+								border-radius: 50%;
+								margin: 0 auto 20px auto;
+								animation: spin 1s linear infinite;
+							}
+
+							.rr-loading-message {
+								font-size: 1.2em;
+								font-weight: bold;
+								margin: 0;
+							}
+
+							@keyframes spin {
+								to {
+									transform: rotate(360deg);
+								}
+							}
+
     `;
     document.head.appendChild(style);
     console.log("✅ Custom styles injected.");
@@ -395,17 +519,22 @@ function showRaidTargets(liveStreamers) {
     raidList.classList.add('raid-list');
     const currentStreamId = getStreamIdFromAlternateLink();
     console.log("Current Stream ID for exclusion:", currentStreamId);
-    if (liveStreamers.length === 0) {
-        const noStreams = document.createElement('p');
+    
+	if (liveStreamers.length === 0) {
+        
+		const noStreams = document.createElement('p');
         noStreams.textContent = "No other live streamers found on the page.";
         noStreams.style.cssText = "color: yellow; text-align: center; margin: 20px; font-weight: bold;";
         raidList.appendChild(noStreams);
+
     } else {
-        liveStreamers.forEach(streamer => {
+        
+		liveStreamers.forEach(streamer => {
             if (currentStreamId && streamer.id === currentStreamId) {
                 console.log(`Skipping current stream: ${streamer.id}`);
                 return;
             }
+
             const btn = document.createElement('button');
             btn.classList.add('raid-target-button');
             const avatarImg = document.createElement('img');
@@ -416,9 +545,13 @@ function showRaidTargets(liveStreamers) {
             const labelSpan = document.createElement('span');
             labelSpan.textContent = `${streamer.username}`;
             btn.appendChild(labelSpan);
-            btn.addEventListener('click', () => {
+            
+			btn.addEventListener('click', () => {
                 const raidTargetUrl = `https://rumble.com${streamer.url}`;
                 
+				popup.remove();
+				manageLoadingPopup(["Waiting for Raid Confirmation..."]);
+
                 chrome.runtime.sendMessage({
                     type: 'sendRaidCommandToHiddenTab',
                     raidTargetUrl: raidTargetUrl
@@ -573,6 +706,17 @@ async function insertRaidButton() {
     btn.appendChild(label);
 
     btn.addEventListener("click", () => {
+
+		const loadingMessages = [
+        "Getting Awesome Raid Targets...",
+        "Hold on Tight...",
+        "Almost there!...",
+        "Processing the level of amaze!...",
+        "Follow @TheRealTombi on Rumble"
+		];
+		
+		manageLoadingPopup(loadingMessages);
+
         console.log("Starting unified raid process via background script.");
         chrome.runtime.sendMessage({
             type: 'startUnifiedRaidProcess'
@@ -644,11 +788,17 @@ observer.observe(document.body, {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'showRaidConfirmation') {
+
+		if (activeLoadingPopup) activeLoadingPopup.close();
+
         showRaidConfirmationPopup(message.html);
         sendResponse({ status: 'ok' });
         return true;
     }
     if (message.type === 'showRaidTargetsPopup') {
+
+		if (activeLoadingPopup) activeLoadingPopup.close();
+
         console.log("Received live streamers from background script. Displaying popup.");
         showRaidTargets(message.liveStreamers);
         sendResponse({ status: 'ok' });
